@@ -2,20 +2,20 @@ import json
 import shutil
 import sys
 from pathlib import Path
+import nbformat
 
-def remove_widgets_in_metadata(obj):
+def remove_widgets_recursive(obj):
+    # work on plain dict-like NotebookNode as well
     if isinstance(obj, dict):
-        # remove widgets under any metadata dict
-        if "metadata" in obj and isinstance(obj["metadata"], dict) and "widgets" in obj["metadata"]:
-            del obj["metadata"]["widgets"]
-        # also remove any direct "widgets" keys just in case
+        # pop any direct 'widgets' key safely
         if "widgets" in obj:
-            del obj["widgets"]
-        for v in obj.values():
-            remove_widgets_in_metadata(v)
+            obj.pop("widgets", None)
+        # iterate over a static list of keys to avoid mutation-during-iteration issues
+        for k in list(obj.keys()):
+            remove_widgets_recursive(obj[k])
     elif isinstance(obj, list):
         for item in obj:
-            remove_widgets_in_metadata(item)
+            remove_widgets_recursive(item)
 
 def main(nb_path):
     nb_path = Path(nb_path)
@@ -24,12 +24,14 @@ def main(nb_path):
         return
     backup = nb_path.with_suffix(nb_path.suffix + ".bak")
     shutil.copy2(nb_path, backup)
-    with nb_path.open("r", encoding="utf-8") as f:
-        nb = json.load(f)
-    remove_widgets_in_metadata(nb)
-    with nb_path.open("w", encoding="utf-8") as f:
-        json.dump(nb, f, ensure_ascii=False, indent=1)
-    print(f"Done. Backup saved to: {backup}")
+    nb = nbformat.read(str(nb_path), as_version=nbformat.NO_CONVERT)
+    # remove top-level metadata.widgets if present
+    if "metadata" in nb and isinstance(nb["metadata"], dict) and "widgets" in nb["metadata"]:
+        nb["metadata"].pop("widgets", None)
+    # traverse entire notebook structure
+    remove_widgets_recursive(nb)
+    nbformat.write(nb, str(nb_path))
+    print(f"Done. Backup: {backup}")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
