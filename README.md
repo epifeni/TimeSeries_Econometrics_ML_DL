@@ -188,6 +188,21 @@ The correlation between two variables under the assumption that we know and take
 Identification of an AR model is often best done with the PACF<b>
 Identification of an MA model is often best done with the ACF rather than a PACF<b>
 
+# Holt-Winters
+3 smoothing equations
+* level - l_t - smoothing parameter: alpha
+* trend - b_t - smoothing parameter: beta
+* seasonality - s_t - - smoothing parameter: gamma
+
+Additive method - seasonality variations are roughly constant throughout teh series<b>
+Multiplicative method - when seasonal vartiaitons change in proportion to the level of the series<b>
+
+3 Types
+* Single exponential smoothing
+* Double exponential smoothing - adds beta as a smoothing factor for the trend component
+* Thriple exponential smoothing - adds a smoothing factor gamma addresses the changes due to seasonality
+* L - number of divisions per cycle (i.e. 3 components: Level, Trend and Seasonal)
+
 
 
 
